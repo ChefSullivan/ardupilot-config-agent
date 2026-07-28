@@ -72,10 +72,22 @@ class CompatibilityTabMixin:
         self.compat_results.insert(tk.END, "")
         by_step = {}
         for r in report.missing:
-            by_step.setdefault(r.step, []).append(r.name)
+            label = f"{r.name} (renamed to {r.renamed_to})" if r.renamed_to else r.name
+            by_step.setdefault(r.step, []).append(label)
         for step, names in by_step.items():
             self.compat_results.insert(tk.END, f"  {step}: missing {', '.join(names)}")
         self.compat_results.insert(tk.END, "")
-        self.compat_results.insert(tk.END, "If you hit this, the toolkit's code likely needs updating for "
-                                             "your firmware version -- check ardupilot.org's current parameter "
-                                             "list for the renamed/replacement name.")
+        renamed = [r for r in report.missing if r.renamed_to]
+        if renamed:
+            self.compat_results.insert(tk.END, "Params shown as '(renamed to ...)' were confirmed missing under "
+                                                 "their old name, AND the known successor was found live on this "
+                                                 "FC. This toolkit already handles those successors -- e.g. "
+                                                 "ARMING_CHECK -> ARMING_SKIPCHK on Copter 4.7.0+, whose bits are "
+                                                 "inverted (set bit = skip that check). Those steps are expected "
+                                                 "to work; the entries are listed here for transparency.")
+            self.compat_results.insert(tk.END, "")
+        if len(renamed) < len(report.missing):
+            self.compat_results.insert(tk.END, "For anything listed WITHOUT a known successor, the toolkit's code "
+                                                 "likely needs updating for your firmware version -- check "
+                                                 "ardupilot.org's current parameter list for the "
+                                                 "renamed/replacement name.")
