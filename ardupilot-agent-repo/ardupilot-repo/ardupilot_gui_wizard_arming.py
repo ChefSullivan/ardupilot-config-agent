@@ -31,8 +31,9 @@ class WizardArmingMixin:
             'Arming checks are safety checks ArduPilot runs before letting the vehicle arm. '
             'How strict they should be depends on what you\'re doing right now -- pick a preset '
             'below, or set individual checks. Hover over any checkbox for what it checks and '
-            'what hardware it applies to. If "All" is checked, ArduPilot ignores the individual '
-            "boxes -- uncheck All first if you want only specific checks. Never recommended to "
+            'what hardware it applies to. "All" means every check runs; on pre-4.7.0 firmware '
+            "it also overrides the individual boxes, so uncheck it first if you want only "
+            "specific checks. Never recommended to "
             "disable: " + ", ".join(sorted(NEVER_RECOMMEND_DISABLING)) + "."
         )).pack(anchor="w", pady=(4, 8))
 
@@ -106,10 +107,13 @@ class WizardArmingMixin:
                 ):
                     return
             elif not messagebox.askyesno("Confirm arming checks",
-                                          f"Write ARMING_CHECK with {len(enabled)} check(s) enabled?"):
+                                          f"Write arming checks with {len(enabled)} check(s) enabled?"):
                 return
+            # arming_apply returns (param_name, value) -- the name matters because
+            # Copter 4.7.0+ stores this as ARMING_SKIPCHK, whose bits are inverted
+            # relative to ARMING_CHECK. Report whichever was actually written.
             self.worker.submit(arming_apply, self.worker.conn, enabled,
-                                on_done=lambda v: self._record_change(arming_describe_value(v)),
+                                on_done=lambda res: self._record_change(arming_describe_value(*res)),
                                 on_error=self._on_job_error)
 
         btn_row2 = ttk.Frame(parent)

@@ -43,12 +43,36 @@ CRITICAL_PARAMS: Dict[str, List[str]] = {
     "Arming Checks": ["ARMING_CHECK"],
 }
 
+# Known parameter renames discovered via release-note monitoring, newer than
+# the firmware this toolkit's param names/enums were originally verified
+# against (Copter 4.6.3, stable 04-Nov-2025). When a CRITICAL_PARAMS entry
+# goes missing, this maps it to its successor so the report can say "renamed
+# to X" instead of just "gone".
+#
+# Copter 4.7.0 (stable, 21-Jul-2026) replaced ARMING_CHECK with
+# ARMING_SKIPCHK (ArduCopter/ReleaseNotes.txt, section "5) Parameter scaling
+# and/or renaming related changes": "ARMING_CHECK replaced with
+# ARMING_SKIPCHK (@tpwrules, PR:31568)").
+#
+# The bit semantics are INVERTED (set bit = skip that check, where
+# ARMING_CHECK's set bit = run that check) and bit 0 "All" no longer exists.
+# That was confirmed against the parameter's own metadata in ArduPilot
+# source at tag Copter-4.7.0 (libraries/AP_Arming/AP_Arming.cpp,
+# "// @Param: SKIPCHK" -- "Arm Checks to Skip (bitmask)"), and
+# arming_checks.py now handles both encodings explicitly. See that module's
+# docstring for the quoted metadata.
+KNOWN_RENAMES: Dict[str, str] = {
+    "ARMING_CHECK": "ARMING_SKIPCHK",
+}
+
 
 @dataclass
 class ParamCheckResult:
     step: str
     name: str
     exists: bool
+    renamed_to: Optional[str] = None  # set only when `name` is missing AND
+    # `renamed_to` was confirmed present on this live FC -- see KNOWN_RENAMES.
 
 
 @dataclass
@@ -111,5 +135,11 @@ def run_compatibility_check(conn: FCConnection) -> CompatibilityReport:
     results: List[ParamCheckResult] = []
     for step, names in CRITICAL_PARAMS.items():
         for name in names:
-            results.append(ParamCheckResult(step=step, name=name, exists=check_param_exists(conn, name)))
+            exists = check_param_exists(conn, name)
+            renamed_to = None
+            if not exists and name in KNOWN_RENAMES:
+                successor = KNOWN_RENAMES[name]
+                if check_param_exists(conn, successor):
+                    renamed_to = successor
+            results.append(ParamCheckResult(step=step, name=name, exists=exists, renamed_to=renamed_to))
     return CompatibilityReport(firmware_version=firmware_version, results=results)
