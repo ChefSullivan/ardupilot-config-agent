@@ -1,7 +1,7 @@
 {
   "last_checked_stable_version": "4.7.0",
   "last_checked_date": "2026-07-21",
-  "last_run": "2026-07-28",
+  "last_run": "2026-08-18",
   "known_issues": [
     "ARMING_CHECK replaced by ARMING_SKIPCHK in Copter 4.7.0 (PR:31568). Bits are INVERTED (set bit = skip that check) and bit 0 'All' is gone; semantics confirmed from AP_Arming.cpp @Param: SKIPCHK metadata at tag Copter-4.7.0. arming_checks.py now supports both encodings and picks by probing the live FC. NOT YET verified against real 4.7.0+ hardware -- bench-test read/apply on a 4.7.0 FC before trusting the arming step on that firmware."
   ]
