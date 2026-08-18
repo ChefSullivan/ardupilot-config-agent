@@ -174,6 +174,20 @@ apply_servo_function_fixes(conn, fixes)
 | `cli.py` | Command-line wrapper over the core modules |
 | `ardupilot_gui.py` + `ardupilot_gui_*.py` | Tkinter desktop GUI (Setup Wizard + standalone tabs), run standalone, no Claude/CLI needed. Each wizard step lives in its own `ardupilot_gui_wizard_*.py` file. |
 
+## Tests
+
+```bash
+python -m pytest tests/
+```
+
+Offline only — no flight controller needed. `tests/test_arming_checks.py`
+verifies the `ARMING_CHECK`/`ARMING_SKIPCHK` bit tables against the
+metadata quoted in `arming_checks.py` and round-trips the conversion in
+both encodings. It cannot confirm a real FC behaves as documented; the
+manual procedure for that is
+[`docs/bench_test_arming_skipchk.md`](docs/bench_test_arming_skipchk.md),
+which has **not** yet been run against real 4.7.0+ hardware.
+
 ## Extending
 
 - Add a confirmed frame layout to `frame_reference.py` only after
